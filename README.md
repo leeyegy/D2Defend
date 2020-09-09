@@ -66,8 +66,10 @@ bash demo_adaptive_cifar10.sh
 
 ## Acknowlegment
 This repo is based on the following codes:
-*https://github.com/ej0cl6/pytorch-adversarial-examples/blob/master/attackers.py
-*The implement of ***Noise Level Estimation Using Weak Textured Patches of a Single Noisy Image***
+
+>https://github.com/ej0cl6/pytorch-adversarial-examples/blob/master/attackers.py
+
+>The implement of ***Noise Level Estimation Using Weak Textured Patches of a Single Noisy Image***
 
 ## TODO
-Codes for TinyImagenet will be released soon.
+Codes for Tiny-Imagenet will be released soon.
