@@ -63,9 +63,12 @@ def _get_test_adv(attack_method,epsilon):
     # Load checkpoint
     print('| Resuming from checkpoint...')
     assert os.path.isdir('checkpoint'), 'Error: No checkpoint directory found!'
-    model = torch.load('./checkpoint/cifar10_pgd_8_model_120.pth')
-
+    file_name = 'wide-resnet-' + str(args.depth) + 'x' + str(args.widen_factor) + '.t7'
+    wideRes = torch.load(os.path.join(save_dir, file_name))
+    wideRes = wideRes['net']
     model = model.to(device)
+    #model = torch.load('./checkpoint/cifar10_pgd_8_model_120.pth')
+    
     optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
     # define adversary
@@ -148,7 +151,7 @@ def get_test_adv_loader_adaptive(attack_method,epsilon):
     h5_store.close()
 
     train_data = torch.from_numpy(test_data)
-    train_target = torch.from_numpy(test_true_target)  # numpy转Tensor
+    train_target = torch.from_numpy(test_true_target) 
     sigma = torch.from_numpy(sigma)
     train_dataset = CIFAR10Dataset_ada(train_data, train_target,sigma)
     del train_data,train_target,sigma
@@ -238,31 +241,6 @@ class CIFAR10Dataset(Dataset):
     def __len__(self):
         return self.data.size(0)
 
-# def get_raw_cifar10_data(loader,nb_samples,batch_size):
-#     '''
-#     @loader:传入一个DataLoader，借此获得源数据
-#     @nb_samples: 只采用前nb_samples个样本
-#     @return:返回原矩阵数据（将x，3,32,32调整成为x，32,32,3）
-#     '''
-#     train_data = []
-#     train_target = []
-#
-#     # 循环得到训练数据
-#     for batch_idx, (data, target) in enumerate(loader):
-#         if (batch_idx+1)*batch_size >nb_samples:
-#             print("got dataset with {} samples ~".format(batch_idx*batch_size))
-#             break
-#         train_data.append(data.numpy())
-#         train_target.append(target.numpy())
-#
-#     train_data = np.asarray(train_data)
-#     train_target = np.asarray(train_target)
-#     train_data = train_data.reshape([-1, 3, 32, 32])
-#     train_target = np.reshape(train_target, [-1])
-#
-#     return train_data, train_target
-#
-#
 def get_raw_cifar10_data(loader):
     train_data = []
     train_target = []
@@ -306,45 +284,11 @@ def get_handled_cifar10_train_loader(batch_size, num_workers, shuffle=True):
     return DataLoader(dataset=train_dataset, num_workers=num_workers, drop_last=True, batch_size=batch_size,
                   shuffle=shuffle)
 
-# def get_handled_cifar10_test_loader(batch_size, num_workers, shuffle=True,nb_samples=100):
-#     file_path = "data/test_" + str(nb_samples)+".h5"
-#     if nb_samples >10000:
-#         print("dataset has only 10000 samples~ ")
-#     if os.path.exists(file_path):
-#         h5_store = h5py.File(file_path, 'r')
-#         train_data = h5_store['data'][:] # 通过切片得到np数组
-#         train_target = h5_store['target'][:]
-#         h5_store.close()
-#         print("^_^ data loaded successfully from test.h5")
-#
-#     else:
-#         h5_store = h5py.File(file_path, 'w')
-#
-#         # 加载数据集
-#         transform = transforms.Compose([transforms.ToTensor()])
-#         trainset = CIFAR10(root="./data", train=False, download=True, transform=transform)
-#         train_loader = DataLoader(trainset, batch_size=batch_size, shuffle=False, num_workers=2)
-#         train_data, train_target = get_raw_cifar10_data(train_loader,nb_samples=nb_samples,batch_size=batch_size)
-#
-#
-#         h5_store.create_dataset('data' ,data= train_data)
-#         h5_store.create_dataset('target',data = train_target)
-#         h5_store.close()
-#
-#
-#     train_data = torch.from_numpy(train_data)
-#     train_target = torch.from_numpy(train_target)  # numpy转Tensor
-#     # 生成dataset的包装类
-#     train_dataset = CIFAR10Dataset(train_data, train_target)
-#     del train_data,train_target
-#     return DataLoader(dataset=train_dataset, num_workers=num_workers, drop_last=True, batch_size=batch_size,
-#                       shuffle=shuffle)
-
 def get_handled_cifar10_test_loader(batch_size, num_workers, shuffle=True):
     if os.path.exists("data/test.h5"):
         # h5_store = pd.HDFStore("data/train.h5", mode='r')
         h5_store = h5py.File("data/test.h5", 'r')
-        train_data = h5_store['data'][:] # 通过切片得到np数组
+        train_data = h5_store['data'][:] 
         train_target = h5_store['target'][:]
         h5_store.close()
         print("^_^ data loaded successfully from test.h5")
@@ -352,7 +296,6 @@ def get_handled_cifar10_test_loader(batch_size, num_workers, shuffle=True):
     else:
         h5_store = h5py.File("data/test.h5", 'w')
 
-        # 加载数据集
         transform = transforms.Compose([transforms.ToTensor()])
         trainset = CIFAR10(root="./data", train=False, download=True, transform=transform)
         train_loader = DataLoader(trainset, batch_size=batch_size, shuffle=False, num_workers=2)
@@ -365,8 +308,7 @@ def get_handled_cifar10_test_loader(batch_size, num_workers, shuffle=True):
 
 
     train_data = torch.from_numpy(train_data)
-    train_target = torch.from_numpy(train_target)  # numpy转Tensor
-    # 生成dataset的包装类
+    train_target = torch.from_numpy(train_target)  
     train_dataset = CIFAR10Dataset(train_data, train_target)
     del train_data,train_target
     return DataLoader(dataset=train_dataset, num_workers=num_workers, drop_last=True, batch_size=batch_size,
@@ -460,7 +402,7 @@ def _generate_adaptive_sigma_h5(h5_path,save_path,sigma_path,dataset="cifar10"):
     assert  os.path.exists(h5_path),"expected file not found:{}".format(h5_path)
     if not  os.path.exists(save_path):
         os.makedirs(save_path)
-    # file_name = np.zeros([200])
+
     file_name = np.zeros([200]) if dataset=="tiny_imagenet" else  np.zeros([10])
 
     save_file_name = os.path.join(save_path,"test_tiny_ImageNet_1000_adv_"+args.attack_method+"_"+str(args.epsilon)+".h5") if dataset=="tiny_imagenet" else os.path.join(save_path,"new_"+args.attack_method+"_"+str(args.epsilon)+".h5")
@@ -498,12 +440,19 @@ def _generate_adaptive_sigma_h5(h5_path,save_path,sigma_path,dataset="cifar10"):
     h5_store.close()
     print("adaptive sigma file saved in {} with data and target ~".format(save_path))
 
-    
-
-
+   
 if __name__ == '__main__':
-    #generate adv file
-    # get_test_adv_loader(args.attack_method,args.epsilon)
+    if args.task == "g_adv":
+        get_test_adv_loader(args.attack_method,args.epsilon)
+    elif args.task == "g_img":
+        h5_path = os.path.join("data","test_adv_"+args.attack_method+"_"+str(args.epsilon)+".h5")
+        save_path = os.path.join("data","cifar10_img","val",args.attack_method+"_"+str(args.epsilon))
+        h52image(h5_path,save_path,dataset="cifar10")
+    elif args.task == "g_adaptive_sigma":
+        h5_path = os.path.join("data","test_adv_"+args.attack_method+"_"+str(args.epsilon)+".h5")
+        save_path = os.path.join("data","threshold_"+str(args.threshold))
+        sigma_path = os.path.join("data","threshold_"+str(args.threshold),args.attack_method+"_"+str(args.epsilon)+".json")
+        _generate_adaptive_sigma_h5(h5_path,save_path,sigma_path,dataset="cifar10")        
 
     # h52image
     # h5_path = os.path.join("data","new_test_adv_"+args.attack_method+"_"+str(args.epsilon)+".h5")
@@ -514,9 +463,9 @@ if __name__ == '__main__':
     # # save_path = os.path.join("data","tiny_imagenet_img",args.attack_method+"_"+str(args.epsilon))
     # h52image(h5_path,save_path,dataset="cifar10")
 
-    #_generate_adaptive_sigma_h5
-    # h5_path = os.path.join("data","test_tiny_ImageNet_1000_adv_"+args.attack_method+"_"+str(args.epsilon)+".h5")
-    h5_path = os.path.join("data","new_test_adv_"+args.attack_method+"_"+str(args.epsilon)+".h5")
-    save_path = os.path.join("data","threshold_"+str(args.threshold))
-    sigma_path = os.path.join("data","threshold_"+str(args.threshold),"new_"+args.attack_method+"_"+str(args.epsilon)+".json")
-    _generate_adaptive_sigma_h5(h5_path,save_path,sigma_path,dataset="cifar10")
+#     #_generate_adaptive_sigma_h5
+#     # h5_path = os.path.join("data","test_tiny_ImageNet_1000_adv_"+args.attack_method+"_"+str(args.epsilon)+".h5")
+#     h5_path = os.path.join("data","new_test_adv_"+args.attack_method+"_"+str(args.epsilon)+".h5")
+#     save_path = os.path.join("data","threshold_"+str(args.threshold))
+#     sigma_path = os.path.join("data","threshold_"+str(args.threshold),"new_"+args.attack_method+"_"+str(args.epsilon)+".json")
+#     _generate_adaptive_sigma_h5(h5_path,save_path,sigma_path,dataset="cifar10")
