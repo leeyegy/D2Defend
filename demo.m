@@ -1,5 +1,5 @@
 %img_name = {'0.0.png','1.0.png','2.0.png','3.0.png','4.0.png'}
-attack_dir = {'NONE_0.0'}
+attack_dir = {'FGSM_0.00784','FGSM_0.03137','FGSM_0.06275'}
 %for j = 1:size(img_name,2);
 %attack_dir = {'BIM_0.00784','BIM_0.03137','BIM_0.06275'}
 
@@ -31,7 +31,7 @@ for c=1:3
     J = dct2(I);
     
     ori_ = J;
-    J(abs(J) < threshold) = 0; %inf测试通过
+    J(abs(J) < threshold) = 0; 
     H_dct = ori_ - J;
     HIGH(:,:,c) = idct2(H_dct);
 end
@@ -70,8 +70,6 @@ else
 sigma_level(img_name+1,class+1)=35;
 level_num(5) = level_num(5)+ 1;
 end
-
-
 
 
 
