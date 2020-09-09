@@ -19,6 +19,8 @@
 ## PREPARATION 
 We provide some pre-trained models based on CIFAR10 [Link](https://drive.google.com/file/d/1y1dn8s86pNRKYIjvFqtuWRPB60JHDHK-/view?usp=sharing). You can download them and put them into ***./checkpoint/***(IF this path doesn't exist, then create it in advance.)
 
+Or you can train a net based on cifar10 from scratch.
+
 
 ## WHOLE STEPS TO RE-PRODUCE OUR PAPER
 ### Step one. Generate adv file
@@ -59,6 +61,3 @@ bash demo_generate_ada_sigma.sh
 ```shell
 bash demo_adaptive_cifar10.sh
 ```
-
-### Fixed Hyper-parameter Version
->Note: In this version, the key hyper-parameter ***sigma*** is fixed empirically, which may performs not very well against part of attack setting.
