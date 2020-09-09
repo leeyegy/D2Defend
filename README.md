@@ -17,7 +17,7 @@
 > skimage
 
 ## PREPARATION 
-We provide five pre-trained models based on CIFAR10 [(Link)](https://drive.google.com/file/d/19334jRulgnpYSRQseK6BTHdlTFHTY8X6/view?usp=sharing, https://drive.google.com/file/d/1LQ8BUuSCUFSUz99KrKQ1C8fyzk17wYm9/view?usp=sharing, https://drive.google.com/file/d/1Nc7rijPeJzbPRUrF7zZ5cHt0mmEWmeJC/view?usp=sharing, https://drive.google.com/file/d/1kePpH-4x2OfH0Awuxeu_xQCq0PibZNxr/view?usp=sharing, https://drive.google.com/file/d/1y1dn8s86pNRKYIjvFqtuWRPB60JHDHK-/view?usp=sharing). You can download them and put them into ***./checkpoint/***(IF this path doesn't exist, then create it in advance.)
+We provide some pre-trained models based on CIFAR10 [Link](https://drive.google.com/file/d/1y1dn8s86pNRKYIjvFqtuWRPB60JHDHK-/view?usp=sharing). You can download them and put them into ***./checkpoint/***(IF this path doesn't exist, then create it in advance.)
 
 
 ## WHOLE STEPS TO RE-PRODUCE OUR PAPER
