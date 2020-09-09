@@ -64,7 +64,7 @@ bash demo_generate_ada_sigma.sh
 bash demo_adaptive_cifar10.sh
 ```
 
-## Acknowlegment
+## Acknowledgment
 This repo is based on the following codes:
 
 >https://github.com/ej0cl6/pytorch-adversarial-examples/blob/master/attackers.py
