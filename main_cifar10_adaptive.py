@@ -38,7 +38,7 @@ import sys
 from torch.autograd import Variable
 sys.path.append("../../")
 from networks import *
-from ddid_lee import ddid
+from defender import *
 from config import  args
 from time import *
 import math
@@ -102,7 +102,7 @@ def adaptive_ddid_batch(img_batch,sigma):
         img = np.transpose(img_batch[i].cpu().numpy(),[1,2,0])
         sigma2 = (sigma[i]/255)**2
         # print (sigma2)
-        res.append(np.transpose(ddid(img,sigma2),[2,0,1]))
+        res.append(np.transpose(d2defend(img,sigma2),[2,0,1]))
     res = torch.from_numpy(np.asarray(res)).cuda()
     return res
 
@@ -120,7 +120,7 @@ def ddid_batch(img_batch,sigma2):
         # print("img.shape:{}".format(img.shape))
         # tmp  = ddid(img, sigma2)
         # print("tmp.shape:{}".format(tmp.shape))
-        res.append(np.transpose(ddid(img,sigma2),[2,0,1]))
+        res.append(np.transpose(d2defend(img,sigma2),[2,0,1]))
     res = torch.from_numpy(np.asarray(res)).cuda()
     return res
 
@@ -134,10 +134,6 @@ def save_result(result, path):
         np.savetxt(path, result, fmt='%2.4f')
     else:
         imsave(path, np.clip(result, 0, 1))
-
-
-def show(img_tensor):
-    transforms.ToPILImage()(img_tensor).show()
 
 # Return network & file name
 def getNetwork(args):
@@ -231,20 +227,16 @@ if __name__ == '__main__':
         advdata, target,sigma = advdata.to(device), target.to(device),sigma.to(device)
 
         # defence
-        begin_time = time()
         defence_data = adaptive_ddid_batch(advdata, sigma)
         if args.test_ssim:
             file_path = "data/test.h5"
             if os.path.exists(file_path):
                 h5_store = h5py.File(file_path, 'r')
-                cln_data = h5_store['data'][:]  # 通过切片得到np数组
+                cln_data = h5_store['data'][:]  
                 h5_store.close()
             cln_data = cln_data[0:50]
             ssim_and_save(defence_data.cpu().numpy(),cln_data)
             break
-        end_time = time()
-        run_time = end_time - begin_time
-        print('该循环程序运行时间：', run_time)
 
         # test
         with torch.no_grad():
