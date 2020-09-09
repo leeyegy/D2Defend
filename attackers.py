@@ -1,14 +1,3 @@
-'''
-REFER TO: https://github.com/ej0cl6/pytorch-adversarial-examples/blob/master/attackers.py
-'''
-
-# Copyright (c) 2018-present, Royal Bank of Canada.
-# All rights reserved.
-#
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
-#
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -98,8 +87,7 @@ class BIM(Attacker):
         nx = torch.unsqueeze(x, 0)
         ny = torch.unsqueeze(y, 0)
         nx.requires_grad_()
-        eta =torch.zeros_like(nx) # 如果nx在gpu中，那么eta也在gpu中
-        # eta = torch.zeros(nx.shape) # 报错，
+        eta =torch.zeros_like(nx)
 
         for i in range(self.n_iter):
             out = self.model(nx + eta)
