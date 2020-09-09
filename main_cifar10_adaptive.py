@@ -190,32 +190,32 @@ if __name__ == '__main__':
 
     # load net
     save_dir = "checkpoint"
-    # file_name = 'wide-resnet-' + str(args.depth) + 'x' + str(args.widen_factor) + '.t7'
+    file_name = 'wide-resnet-' + str(args.depth) + 'x' + str(args.widen_factor) + '.t7'
 
-    file_name = "cifar10_PGD_8_wideres_model_101.pth"
+    #file_name = "cifar10_PGD_8_wideres_model_101.pth"
     wideRes = torch.load(os.path.join(save_dir, file_name))
-    # wideRes = wideRes['net']
+    wideRes = wideRes['net']
     wideRes = wideRes.to(device)
 
-    vgg16 = torch.load(os.path.join(save_dir,'cifar10_vgg16_model_299.pth'))
-    vgg16 = vgg16.to(device)
+    #vgg16 = torch.load(os.path.join(save_dir,'cifar10_vgg16_model_299.pth'))
+    #vgg16 = vgg16.to(device)
 
-    vgg11 = torch.load(os.path.join(save_dir,'cifar10_vgg11_model_199.pth'))
-    vgg11 = vgg11.to(device)
+    #vgg11 = torch.load(os.path.join(save_dir,'cifar10_vgg11_model_199.pth'))
+    #vgg11 = vgg11.to(device)
 
-    resnet50 = torch.load(os.path.join(save_dir,'cifar10_resnet50_model_199.pth'))
-    resnet50 = resnet50.to(device)
+    #resnet50 = torch.load(os.path.join(save_dir,'cifar10_resnet50_model_199.pth'))
+    #resnet50 = resnet50.to(device)
 
     #evaluate
-    vgg16.eval()
+    #vgg16.eval()
     wideRes.eval()
-    vgg11.eval()
-    resnet50.eval()
+    #vgg11.eval()
+    #resnet50.eval()
 
     correct_wideRes = 0
-    correct_vgg16 = 0
-    correct_vgg11 = 0
-    correct_resnet50 = 0
+    #correct_vgg16 = 0
+    #correct_vgg11 = 0
+    #correct_resnet50 = 0
 
     count = 0
     for advdata, target,sigma in test_adv_loader:
@@ -241,26 +241,24 @@ if __name__ == '__main__':
         # test
         with torch.no_grad():
             output_wideRes = wideRes(defence_data.float())
-            output_vgg16 = vgg16(defence_data.float())
-            output_res50 = resnet50(defence_data.float())
-            output_vgg11 = vgg11(defence_data.float())
+       #     output_vgg16 = vgg16(defence_data.float())
+        #    output_res50 = resnet50(defence_data.float())
+         #   output_vgg11 = vgg11(defence_data.float())
 
         pred_wideRes = output_wideRes.max(1, keepdim=True)[1]
-        pred_vgg16 = output_vgg16.max(1, keepdim=True)[1]
-        pred_res50 = output_res50.max(1, keepdim=True)[1]
-        pred_vgg11 = output_vgg11.max(1, keepdim=True)[1]
+        #pred_vgg16 = output_vgg16.max(1, keepdim=True)[1]
+        #pred_res50 = output_res50.max(1, keepdim=True)[1]
+        #pred_vgg11 = output_vgg11.max(1, keepdim=True)[1]
 
         correct_wideRes += pred_wideRes.eq(target.view_as(pred_wideRes)).sum().item()
-        correct_vgg16 += pred_vgg16.eq(target.view_as(pred_vgg16)).sum().item()
-        correct_resnet50 += pred_res50.eq(target.view_as(pred_res50)).sum().item()
-        correct_vgg11 += pred_vgg11.eq(target.view_as(pred_vgg11)).sum().item()
+        #correct_vgg16 += pred_vgg16.eq(target.view_as(pred_vgg16)).sum().item()
+        #correct_resnet50 += pred_res50.eq(target.view_as(pred_res50)).sum().item()
+        #correct_vgg11 += pred_vgg11.eq(target.view_as(pred_vgg11)).sum().item()
 
         print("handled {} samples ~".format(count * 50))
     print('\nclean Test set: '
-          ' wideRes_defence acc: {}/{} ({:.0f}%)  VGG16 defence acc: {}/{} ({:.0f}%)  res50_defence acc: {}/{} ({:.0f}%)  VGG11 defence acc: {}/{} ({:.0f}%)\n'.format(
+          ' wideRes_defence acc: {}/{} ({:.0f}%)\n'.format(
                correct_wideRes, count*50,
-              100. * correct_wideRes / (count*50),correct_vgg16,count*50,100. * correct_vgg16 / (count*50),
-        correct_resnet50, count * 50, 100. * correct_resnet50 / (count * 50),
-        correct_vgg11, count * 50, 100. * correct_vgg11 / (count * 50)
+              100. * correct_wideRes / (count*50)
     ))
 
