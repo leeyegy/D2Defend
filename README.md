@@ -18,6 +18,7 @@
 
 > scipy
 
+> PIL
 ## PREPARATION 
 We provide some pre-trained models based on CIFAR10 [Link](https://drive.google.com/file/d/1y1dn8s86pNRKYIjvFqtuWRPB60JHDHK-/view?usp=sharing). You can download them and put them into ***./checkpoint/***(IF this path doesn't exist, then create it in advance.)
 
