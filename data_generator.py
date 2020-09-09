@@ -2,12 +2,12 @@ import glob
 import cv2
 import os
 import numpy as np
-# from multiprocessing import Pool
+
 from torch.utils.data import Dataset, DataLoader
 import torch
 import torchvision.transforms as transforms
 from torchvision.datasets import CIFAR10
-import h5py # 通过h5py读写hdf5文件
+import h5py
 import argparse
 from networks import  *
 
@@ -52,59 +52,23 @@ def getNetwork(args):
     return net, file_name
 
 def _get_test_adv(attack_method,epsilon):
-    # define parameter
-    # parser = argparse.ArgumentParser(description='Train MNIST')
-    # parser.add_argument('--seed', default=0, type=int)
-    # parser.add_argument('--mode', default="adv", help="cln | adv")
-    # parser.add_argument('--sigma', default=75, type=int, help='noise level')
-    # parser.add_argument('--train_batch_size', default=50, type=int)
-    # parser.add_argument('--test_batch_size', default=1000, type=int)
-    # parser.add_argument('--log_interval', default=200, type=int)
-    # parser.add_argument('--result_dir', default='results', type=str, help='directory of test dataset')
-    # parser.add_argument('--monitor', default=False, type=bool, help='if monitor the training process')
-    # parser.add_argument('--start_save', default=90, type=int,
-    #                     help='the threshold epoch which will start to save imgs data using in testing')
-    #
-    # # attack
-    # parser.add_argument("--attack_method", default="PGD", type=str,
-    #                     choices=['FGSM', 'PGD', 'Momentum', 'STA'])
-    #
-    # parser.add_argument('--epsilon', type=float, default=8 / 255, help='if pd_block is used')
-    #
-    # parser.add_argument('--dataset', default='cifar10', type=str, help='dataset = [cifar10/MNIST]')
-    #
-    # # net
-    # parser.add_argument('--net_type', default='wide-resnet', type=str, help='model')
-    # parser.add_argument('--depth', default=28, type=int, help='depth of model')
-    # parser.add_argument('--widen_factor', default=10, type=int, help='width of model')
-    # parser.add_argument('--dropout', default=0.3, type=float, help='dropout_rate')
-    # parser.add_argument('--num_classes', default=10, type=int)
-    # args = parser.parse_args()
-
     torch.manual_seed(args.seed)
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
 
     # load basic data
-    # 测试包装的loader
     # test_loader = get_handled_cifar10_test_loader(num_workers=4, shuffle=False, batch_size=50,nb_samples=10000)
     test_loader = get_handled_cifar10_test_loader(num_workers=4, shuffle=False, batch_size=50)
 
-    # 加载网络模型
     # Load checkpoint
     print('| Resuming from checkpoint...')
     assert os.path.isdir('checkpoint'), 'Error: No checkpoint directory found!'
-
-    # _, file_name = getNetwork(args)
-    # checkpoint = torch.load('./checkpoint/' +  file_name + '.t7')  # os.sep提供跨平台的分隔符
-    # model = checkpoint['net']
     model = torch.load('./checkpoint/cifar10_pgd_8_model_120.pth')
 
-    #
     model = model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
-    # 定义对抗攻击类型：C&W
+    # define adversary
     from advertorch.attacks import LinfPGDAttack
     if attack_method == "PGD":
         adversary = LinfPGDAttack(
@@ -114,7 +78,7 @@ def _get_test_adv(attack_method,epsilon):
     elif attack_method == "FGSM":
         adversary = GradientSignAttack(
             model, loss_fn=nn.CrossEntropyLoss(reduction="sum"),
-            clip_min=0.0, clip_max=1.0, eps=epsilon, targeted=False)  # 先测试一下不含扰动范围限制的，FGSM的eps代表的是一般的eps_iter
+            clip_min=0.0, clip_max=1.0, eps=epsilon, targeted=False) 
     elif attack_method == "Momentum":
         adversary = MomentumIterativeAttack(
             model, loss_fn=nn.CrossEntropyLoss(reduction="sum"), eps=epsilon,
@@ -155,7 +119,6 @@ def _get_test_adv(attack_method,epsilon):
     test_adv = []
     test_true_target = []
     for clndata, target in test_loader:
-        print("clndata:{}".format(clndata.size()))
         clndata, target = clndata.to(device), target.to(device)
         with ctx_noparamgrad_and_eval(model):
             advdata = adversary.perturb(clndata, target)
@@ -176,7 +139,7 @@ def get_test_adv_loader_adaptive(attack_method,epsilon):
 
     #save file
     h5_store = h5py.File(file_name, 'r')
-    test_data = h5_store['data'][:] # 通过切片得到np数组
+    test_data = h5_store['data'][:] 
     try:
         test_true_target=h5_store['true_target'][:]
     except:
@@ -184,8 +147,6 @@ def get_test_adv_loader_adaptive(attack_method,epsilon):
     sigma = h5_store['sigma'][:]
     h5_store.close()
 
-
-    # 生成dataset的包装类
     train_data = torch.from_numpy(test_data)
     train_target = torch.from_numpy(test_true_target)  # numpy转Tensor
     sigma = torch.from_numpy(sigma)
@@ -198,7 +159,7 @@ def get_test_adv_loader(attack_method,epsilon):
     #save file
     if os.path.exists("data/test_adv_"+str(attack_method)+"_"+str(epsilon)+".h5"):
         h5_store = h5py.File("data/test_adv_"+str(attack_method)+"_"+str(epsilon)+".h5", 'r')
-        test_data = h5_store['data'][:] # 通过切片得到np数组
+        test_data = h5_store['data'][:]
         try:
             test_true_target=h5_store['true_target'][:]
         except:
@@ -212,7 +173,6 @@ def get_test_adv_loader(attack_method,epsilon):
         h5_store.create_dataset('true_target',data=test_true_target)
         h5_store.close()
 
-    # 生成dataset的包装类
     train_data = torch.from_numpy(test_data)
     train_target = torch.from_numpy(test_true_target)  # numpy转Tensor
     train_dataset = CIFAR10Dataset(train_data, train_target)
@@ -248,7 +208,7 @@ class CIFAR10Dataset_ada(Dataset):
         self.target = target
         self.sigma=sigma
 
-    def __getitem__(self, index): # 该函数涉及到enumerate的返回值
+    def __getitem__(self, index): 
         batch_x = self.data[index]
         batch_y = self.target[index]
         batch_s = self.sigma[index]
@@ -257,8 +217,6 @@ class CIFAR10Dataset_ada(Dataset):
 
     def __len__(self):
         return self.data.size(0)
-
-
 
 class CIFAR10Dataset(Dataset):
     """Dataset wrapping tensors.
@@ -272,7 +230,7 @@ class CIFAR10Dataset(Dataset):
         self.data = data
         self.target = target
 
-    def __getitem__(self, index): # 该函数涉及到enumerate的返回值
+    def __getitem__(self, index): 
         batch_x = self.data[index]
         batch_y = self.target[index]
         return batch_x, batch_y
@@ -306,18 +264,13 @@ class CIFAR10Dataset(Dataset):
 #
 #
 def get_raw_cifar10_data(loader):
-    '''
-    @loader:传入一个DataLoader，借此获得源数据
-    @return:返回原矩阵数据（将x，3,32,32调整成为x，32,32,3）
-    '''
     train_data = []
     train_target = []
 
-    # 循环得到训练数据
+    # load data
     for batch_idx, (data, target) in enumerate(loader):
         train_data.append(data.numpy())
         train_target.append(target.numpy())
-
     train_data = np.asarray(train_data)
     train_target = np.asarray(train_target)
     train_data = train_data.reshape([-1, 3, 32, 32])
@@ -328,12 +281,11 @@ def get_raw_cifar10_data(loader):
 
 def get_handled_cifar10_train_loader(batch_size, num_workers, shuffle=True):
     if os.path.exists("data/train.h5"):
-        # h5_store = pd.HDFStore("data/train.h5", mode='r')
         h5_store = h5py.File("data/train.h5", 'r')
-        train_data = h5_store['data'][:] # 通过切片得到np数组
+        train_data = h5_store['data'][:]
         train_target = h5_store['target'][:]
         h5_store.close()
-        # print("^_^ data loaded successfully from train.h5")
+        print("^_^ data loaded successfully from train.h5")
     else:
         h5_store = h5py.File("data/train.h5", 'w')
 
@@ -347,9 +299,8 @@ def get_handled_cifar10_train_loader(batch_size, num_workers, shuffle=True):
         h5_store.create_dataset('target',data = train_target)
         h5_store.close()
 
-    # 生成dataset的包装类
     train_data = torch.from_numpy(train_data)
-    train_target = torch.from_numpy(train_target)  # numpy转Tensor
+    train_target = torch.from_numpy(train_target) 
     train_dataset = CIFAR10Dataset(train_data, train_target)
     del train_data,train_target
     return DataLoader(dataset=train_dataset, num_workers=num_workers, drop_last=True, batch_size=batch_size,
@@ -421,146 +372,13 @@ def get_handled_cifar10_test_loader(batch_size, num_workers, shuffle=True):
     return DataLoader(dataset=train_dataset, num_workers=num_workers, drop_last=True, batch_size=batch_size,
                       shuffle=shuffle)
 
-
-def data_aug(raw_img_data):
-    '''
-    首先对图片进行亮度调整，然后对图片进行随机的投射变换处理，少的地方进行补0处理
-    @raw_img_data :[x,h,w,channel] numpy.array
-    @return : [x,h,w,channel] numpy.array
-
-    '''
-    # print("input shape :{}, and will iterate {} times".format(raw_img_data.shape, np.size(raw_img_data, 0)))
-    res = []
-    for i in range(np.size(raw_img_data, 0)):
-        # show raw image :
-        # show(raw_img_data[i,:,:,:].reshape(32,32,3))
-
-        # 对亮度进行随机调整：借助transforms.ColorJitter类，这是一个可调用对象，可以让类的实例像函数一样被调用,使用这个类需要将图片转成PIL Image
-        img_data = raw_img_data[i, :, :, :]
-        # img_data = np.transpose(img_data, [2, 0, 1])
-        # 从PIL IMAGE转np得到的是[channel,height,width] np转PIL Image 也需要保证这一格式
-
-        # print(img_data.shape)
-        # print(img_data)
-        # img_data = img_data.astype(np.uint8)
-
-        img_data = transforms.ToPILImage()(torch.from_numpy(img_data))  # numpy->PIL Image # 假设是（32，32,3）而非（3,32,32）
-        # img_data.show() # show raw image
-        rand_brightness = np.random.rand()
-        # print(rand_brightness)
-        img_data = transforms.ColorJitter(brightness=rand_brightness)(img_data)  # modify brightness
-
-        # 对图片进行透视变换
-        transforms_proba = np.random.uniform(0.3, 1)  # probability of being perspectively transformed
-        img_data = transforms.RandomPerspective(p=transforms_proba, distortion_scale=0.5)(img_data)
-
-        # img_data.show()# show image augmented
-        img_data = transforms.ToTensor()(img_data).numpy()  # PIL Image -> Tensor->numpy
-
-        # reshape here
-        res.append(img_data)
-
-    # show augmented image
-    # show(img_data)
-
-    # print("^_^ data augmented finished with shape: {}".format(np.asarray(res).shape))
-    return np.asarray(res)
-
-
-def _transform_vector(self, width, x_shift, y_shift, im_scale, rot_in_degrees):
-    """
-    If one row of transforms is [a0, a1, a2, b0, b1, b2, c0, c1],
-    then it maps the output point (x, y) to a transformed input point
-    (x', y') = ((a0 x + a1 y + a2) / k, (b0 x + b1 y + b2) / k),
-    where k = c0 x + c1 y + 1.
-    The transforms are inverted compared to the transform mapping input points to output points.
-    """
-
-    rot = float(rot_in_degrees) / 90. * (math.pi / 2)
-
-    # Standard rotation matrix
-    # (use negative rot because tf.contrib.image.transform will do the inverse)
-    rot_matrix = np.array(
-        [[math.cos(-rot), -math.sin(-rot)],
-         [math.sin(-rot), math.cos(-rot)]]
-    )
-
-    # Scale it
-    # (use inverse scale because tf.contrib.image.transform will do the inverse)
-    inv_scale = 1. / im_scale
-    xform_matrix = rot_matrix * inv_scale
-    a0, a1 = xform_matrix[0]
-    b0, b1 = xform_matrix[1]
-
-    # At this point, the image will have been rotated around the top left corner,
-    # rather than around the center of the image.
-    #
-    # To fix this, we will see where the center of the image got sent by our transform,
-    # and then undo that as part of the translation we apply.
-    x_origin = float(width) / 2
-    y_origin = float(width) / 2
-
-    x_origin_shifted, y_origin_shifted = np.matmul(
-        xform_matrix,
-        np.array([x_origin, y_origin]),
-    )
-
-    x_origin_delta = x_origin - x_origin_shifted
-    y_origin_delta = y_origin - y_origin_shifted
-
-    # Combine our desired shifts with the rotation-induced undesirable shift
-    a2 = x_origin_delta - (x_shift / (2 * im_scale))
-    b2 = y_origin_delta - (y_shift / (2 * im_scale))
-
-    # Return these values in the order that tf.contrib.image.transform expects
-    return np.array([a0, a1, a2, b0, b1, b2, 0, 0]).astype(np.float32)
-
-
-def gen_patches(file_name):
-    # get multiscale patches from a single image
-    img = cv2.imread(file_name, 0)  # gray scale
-    h, w = img.shape
-    patches = []
-    for s in scales:
-        h_scaled, w_scaled = int(h * s), int(w * s)
-        img_scaled = cv2.resize(img, (h_scaled, w_scaled), interpolation=cv2.INTER_CUBIC)
-        # extract patches
-        for i in range(0, h_scaled - patch_size + 1, stride):
-            for j in range(0, w_scaled - patch_size + 1, stride):
-                x = img_scaled[i:i + patch_size, j:j + patch_size]
-                for k in range(0, aug_times):
-                    x_aug = data_aug(x, mode=np.random.randint(0, 8))
-                    patches.append(x_aug)
-    return patches
-
-
-def datagenerator(data_dir='data/Train400', verbose=False):
-    # generate clean patches from a dataset
-    file_list = glob.glob(data_dir + '/*.png')  # get name list of all .png files
-    # initrialize
-    data = []
-
-    # generate patches
-    for i in range(len(file_list)):
-        patches = gen_patches(file_list[i])
-        for patch in patches:
-            data.append(patch)
-        if verbose:
-            print(str(i + 1) + '/' + str(len(file_list)) + ' is done ^_^')
-    data = np.array(data, dtype='uint8')
-    data = np.expand_dims(data, axis=3)
-    discard_n = len(data) - len(data) // batch_size * batch_size  # because of batch namalization
-    data = np.delete(data, range(discard_n), axis=0)
-    print('^_^-training data finished-^_^')
-    return data
-
 def get_test_raw_data():
     '''
     :return: train_image ,  train_target  | tensor
     '''
     if os.path.exists("data/test.h5"):
         h5_store = h5py.File("data/test.h5", 'r')
-        train_data = h5_store['data'][:] # 通过切片得到np数组
+        train_data = h5_store['data'][:]
         train_target = h5_store['target'][:]
         h5_store.close()
     else:
@@ -576,7 +394,6 @@ def get_test_raw_data():
         h5_store.create_dataset('target',data = train_target)
         h5_store.close()
 
-    # 生成dataset的包装类
     train_data = torch.from_numpy(train_data)
     train_target = torch.from_numpy(train_target)  # numpy转Tensor
     return train_data,train_target
@@ -588,7 +405,7 @@ def get_train_raw_data():
     if os.path.exists("data/train.h5"):
         # h5_store = pd.HDFStore("data/train.h5", mode='r')
         h5_store = h5py.File("data/train.h5", 'r')
-        train_data = h5_store['data'][:] # 通过切片得到np数组
+        train_data = h5_store['data'][:] 
         train_target = h5_store['target'][:]
         h5_store.close()
         # print("^_^ data loaded successfully from train.h5")
@@ -605,7 +422,6 @@ def get_train_raw_data():
         h5_store.create_dataset('target',data = train_target)
         h5_store.close()
 
-    # 生成dataset的包装类
     train_data = torch.from_numpy(train_data)
     train_target = torch.from_numpy(train_target)  # numpy转Tensor
     return train_data,train_target
@@ -617,7 +433,6 @@ def h52image(h5_path,save_path,dataset="cifar10"):
     if not  os.path.exists(save_path):
         os.makedirs(save_path)
     file_name = np.zeros([200]) if dataset=="tiny_imagenet" else  np.zeros([10])
-
 
     # load data
     h5_store = h5py.File(h5_path,"r")
