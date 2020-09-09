@@ -1,5 +1,3 @@
-
-
 from __future__ import print_function
 
 import os
@@ -18,8 +16,6 @@ from advertorch_examples.utils import get_mnist_train_loader
 from advertorch_examples.utils import get_mnist_test_loader
 from advertorch_examples.utils import TRAINED_MODEL_PATH
 from advertorch.attacks import CarliniWagnerL2Attack,GradientSignAttack,L2PGDAttack,SpatialTransformAttack,JacobianSaliencyMapAttack,MomentumIterativeAttack
-from model_CNN import  ResNet18
-
 import h5py
 
 import numpy as np
