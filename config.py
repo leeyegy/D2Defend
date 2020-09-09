@@ -13,7 +13,7 @@ parser.add_argument('--epsilon', type=float, default=8 / 255, help='if pd_block 
 
 parser.add_argument('--dataset', default='cifar10', type=str, help='dataset = [cifar10/MNIST]')
 
-# ddid
+# d2defend
 parser.add_argument('--sigma', type=int, default=30, help='for ddid ')
 parser.add_argument('--threshold', type=int, default=20, help='for DCT high-frequency exacting')
 parser.add_argument('--r', type=int, default=15, help='for ddid step')
@@ -39,5 +39,7 @@ parser.add_argument('--nb_iters', default=3, type=int, choices=[1,2,3],help="num
 # BPDA
 parser.add_argument("--max_iterations",default = 10, type =int)
 
+# task for run data_generator.py
+parser.add_argument("--task",default="g_adv",choices=["g_adv","g_img","g_adaptive_sigma"])
 
 args = parser.parse_args()
