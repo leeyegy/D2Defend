@@ -30,10 +30,28 @@ You can change the attack setting(e.g., attack method and perturbation range ***
 To evaluate the adversarial noise level, D2Defend adopts a matlab program. To run this program, all adversarial examples need to be saved as image file firstly. 
 
 ```shell
-bash demo_
+bash demo_generate_image.sh
+```
+You can change the setting(e.g., attack method and perturbation range ***epsilon***) in ***demo_generate_image.sh***.
+
+### Step three. Adversarial Noise estimation
+
+```shell
+matlab
+run demo.m
+```
+By following the above steps, some \*.json will be created in the current dir, just move them into  ***./data/threshold_20/***(IF this path doesn't exist, then create them in advance.)
+
+```shell
+mv *.json ./data/threshold_20/
 ```
 
+### Step Four. Generate adaptive sigma data file 
 
+```shell
+bash demo_generate_ada_sigma.sh
+```
 
+### Step Five. Run D2Defend
 ### Fixed Hyper-parameter Version
 >Note: In this version, the key hyper-parameter ***sigma*** is fixed empirically, which may performs not very well against part of attack setting.
