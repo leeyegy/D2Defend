@@ -5,7 +5,7 @@ from config import  args
 from time import *
 
 
-def ddid(y, sigma2):
+def d2defend(y, sigma2):
     '''
     :@y : [H,W,C] | [0,1]
     :@sigma2: (sigma/255)^2
@@ -46,13 +46,12 @@ def step(x, y, sigma2, r, sigma_s, gamma_r, gamma_f):
         xp.append(np.pad(x[:, :, i], (r, r), 'symmetric'))
         yp.append(np.pad(y[:, :, i], (r, r), 'symmetric'))
 
-    xp = np.transpose(np.asarray(xp), [1, 2, 0])  # bug one
+    xp = np.transpose(np.asarray(xp), [1, 2, 0])  
     yp = np.transpose(np.asarray(yp), [1, 2, 0])
 
     xt = np.zeros(np.shape(x))
     end_time = time()
     run_time = end_time - begin_time
-    # print('step函数预处理时间：', run_time)
 
     for i in range(0, height):
         for j in range(0, width):
@@ -75,7 +74,6 @@ def step(x, y, sigma2, r, sigma_s, gamma_r, gamma_f):
 
             end_time = time()
             run_time = end_time - begin_time
-            # print('BF时间：', run_time)
 
             # Fourier Domain: Wavelet Shrinkage
             begin_time = time()
@@ -107,7 +105,6 @@ def step(x, y, sigma2, r, sigma_s, gamma_r, gamma_f):
             St = np.asarray(St)
             end_time = time()
             run_time = end_time - begin_time
-            # print('小波时间：', run_time)
             xt[i, j, :] = st + St.real
     return xt
 
@@ -115,35 +112,4 @@ def step(x, y, sigma2, r, sigma_s, gamma_r, gamma_f):
 if __name__ == "__main__":
     # sigma=30/255
     sigma = 50 / 255  # for test
-    from PIL import Image
-
-    # img = Image.fromarray(img.astype('uint8')).convert('RGB')
-    # img.save('pil_house.png')
-    # img=cv2.imread('Images/House256rgb.png')
-    img = np.asarray(Image.open('Images/House256rgb.png'))
-    # print(img)
-    # print(np.max(img))
-    # print(img.shape)
-    # img = np.reshape(img,[np.shape(img)[0],np.shape(img)[1],-1])
-    # print(img.shape)
-    # print(img)
-    img = img / 255
-    # img = img *255
-    # print(img)
-
-    # cv2.imwrite('pure_house.png',img)
-    xt = ddid(img, sigma ** 2)
-    # xt=ddid(img,0.0384)
-
-    # print(np.max(xt))
-    # xt = xt*255
-    # cv2.imwrite('python_Peppers512rgb.png',xt)
-    # import matplotlib.image as mp
-    # mp.imsave('mp_house.png',xt)
-    img = xt * 255
-
-    from PIL import Image
-
-    img = Image.fromarray(img.astype('uint8')).convert('RGB')
-    img.save('pil_house.png')
 
